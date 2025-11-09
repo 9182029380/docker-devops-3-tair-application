@@ -30,41 +30,32 @@ Create a file named `Dockerfile` in the `springboot-backend` directory:
 **Path**: `springboot-backend/Dockerfile`
 
 ```dockerfile
-# Multi-stage build for Spring Boot
-FROM maven:3.8.5-openjdk-17 AS build
-
-# Set working directory
-WORKDIR /app
-
-# Copy pom.xml and download dependencies
-COPY pom.xml .
-RUN mvn dependency:go-offline -B
-
-# Copy source code
-COPY src ./src
-
-# Build the application
-RUN mvn clean package -DskipTests
-
-# Second stage - Runtime
+# Use OpenJDK 17 image
 FROM openjdk:17-jdk-slim
 
 # Set working directory
 WORKDIR /app
 
-# Copy jar from build stage
-COPY --from=build /app/target/*.jar app.jar
+# Copy Maven wrapper and project files
+COPY . .
+
+# Build the application (uses Maven wrapper)
+RUN ./mvnw clean package -DskipTests || mvn clean package -DskipTests
+
+# Copy the built jar (if target exists)
+RUN cp target/*.jar app.jar
 
 # Expose port
 EXPOSE 8080
 
-# Set environment variables
+# Environment variables
 ENV SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/employee_management_system
 ENV SPRING_DATASOURCE_USERNAME=root
 ENV SPRING_DATASOURCE_PASSWORD=root
 
-# Run the application
+# Start the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
+
 ```
 
 ---
